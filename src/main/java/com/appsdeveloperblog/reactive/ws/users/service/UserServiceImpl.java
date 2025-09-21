@@ -5,9 +5,13 @@ import com.appsdeveloperblog.reactive.ws.users.data.UserRepository;
 import com.appsdeveloperblog.reactive.ws.users.presentation.CreateUserRequest;
 import com.appsdeveloperblog.reactive.ws.users.presentation.UserRest;
 import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -32,7 +36,6 @@ public class UserServiceImpl implements UserService {
                 .flatMap(userRepository::save)
                 .mapNotNull(this::convertToRest);
     }
-
     @Override
     public Mono<UserRest> getUserById(UUID id) {
         return userRepository.findById(id)
@@ -41,6 +44,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Flux<UserRest> findAll(int page, int limit) {
+        if(page > 0) page = page -1; //Because page starts from 1
         Pageable pageable = PageRequest.of(page, limit);
         return userRepository.findAllBy(pageable)
                 .map(userEntity -> convertToRest(userEntity));
